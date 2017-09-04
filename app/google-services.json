@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1038851238244",
+    "firebase_url": "https://darkmessenger-f43bd.firebaseio.com",
+    "project_id": "darkmessenger-f43bd",
+    "storage_bucket": "darkmessenger-f43bd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1038851238244:android:ef5e3d7217982a9f",
+        "android_client_info": {
+          "package_name": "messenger.dark.com.darkmessenger"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1038851238244-mp8452n18vi5q7plrj6qhgelkblggnt1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "messenger.dark.com.darkmessenger",
+            "certificate_hash": "c36607ae9e2728bcdf1085288c3374f7dd2aa202"
+          }
+        },
+        {
+          "client_id": "1038851238244-rdp09p2p7gs4ejlcmtrn3co6v3mnsl8f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdUTaQV-GbI1q_SOIj9R8boTgtA-g_26c"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1038851238244-rdp09p2p7gs4ejlcmtrn3co6v3mnsl8f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
