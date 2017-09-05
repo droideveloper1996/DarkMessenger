@@ -1,18 +1,23 @@
 package messenger.dark.com.darkmessenger;
 
+import android.Manifest.permission;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaRecorder;
 import android.net.Uri;
+import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -45,6 +50,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -57,6 +63,11 @@ import static android.app.Activity.RESULT_OK;
 public class ChatFragment extends Fragment {
 
     private static final String LOG_TAG = "ChatFragment";
+    private static final int MY_PERMISSIONS_REQUEST_WRITE_STORAGE = 25;
+    private static final int MY_PERMISSIONS_REQUEST_READ_STORAGE = 26;
+    private static final int REQUEST_MICROPHONE = 40;
+
+
     EditText message;
     private MessageAdapter messageAdapter;
     ArrayList<ChatMessage> chatMessageArrayList;
@@ -69,6 +80,7 @@ public class ChatFragment extends Fragment {
     FirebaseStorage firebaseStorage;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
     StorageReference storageReference;
+    StorageReference audioStoragereference;
     ListView mListView;
     LinearLayoutManager linearLayoutManager;
     private Context mContext;
@@ -85,9 +97,10 @@ public class ChatFragment extends Fragment {
         mListView = (ListView) v.findViewById(R.id.messageListView);
         chatMessageArrayList = new ArrayList<ChatMessage>();
         mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
-        mFileName += "/recorded_audio" + String.valueOf(System.currentTimeMillis()) + ".3gp";
+        mFileName += "/recorded_audio.3gp";
         progressDialogue = new ProgressDialog(getContext());
         mContext = getContext();
+        audioStoragereference=FirebaseStorage.getInstance().getReference().child("Audio");
         firebaseDatabase = FirebaseDatabase.getInstance();
         databaseReference = firebaseDatabase.getReference().child("messages");
         final ImageView send = (ImageView) v.findViewById(R.id.send);
@@ -154,6 +167,8 @@ public class ChatFragment extends Fragment {
 
             }
         });
+
+        getPermision();
        /* mListView.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -242,7 +257,7 @@ public class ChatFragment extends Fragment {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                     media.setVisibility(View.GONE);
                     send.setVisibility(View.GONE);
-                   // startRecording();
+                    startRecording();
                     message.setText("Recording...");
                     linearLayout.setBackgroundColor(Color.parseColor("#7C0a02"));
 
@@ -254,19 +269,26 @@ public class ChatFragment extends Fragment {
                     linearLayout.setBackgroundColor(Color.parseColor("#F9F9F9"));
                     message.setBackgroundColor(Color.parseColor("#ffffff"));
                     progressDialogue.setMessage("Sending...");
-                  //  stopRecording();
-                    Handler handler=new Handler();
+                    stopRecording();
+                    Handler handler = new Handler();
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             message.setText("");
                         }
-                    },500);
+                    }, 500);
 
                 }
                 return false;
             }
         });
+        if (ContextCompat.checkSelfPermission(getActivity(),
+                permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(),
+                    new String[]{permission.READ_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_REQUEST_READ_STORAGE);
+        }
 
         return v;
     }
@@ -310,6 +332,17 @@ public class ChatFragment extends Fragment {
     }
 
     private void startRecording() {
+        if (VERSION.SDK_INT >= 23) {
+            if (ContextCompat.checkSelfPermission(getActivity(),
+                    android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(getActivity(),
+                        new String[]{android.Manifest.permission.RECORD_AUDIO},
+                        REQUEST_MICROPHONE);
+
+            }
+        }
+
         mRecorder = new MediaRecorder();
         mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
@@ -323,12 +356,50 @@ public class ChatFragment extends Fragment {
         }
 
         mRecorder.start();
+
     }
+
 
     private void stopRecording() {
-        mRecorder.stop();
-        mRecorder.release();
-        mRecorder = null;
+
+        try {
+            mRecorder.stop();
+            mRecorder.release();
+            mRecorder = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        uploadAudio();
     }
 
+    void getPermision() {
+        if (ContextCompat.checkSelfPermission(getActivity(),
+                permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            ActivityCompat.requestPermissions(getActivity(),
+                    new String[]{permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_WRITE_STORAGE);
+        }
+
+
+    }
+
+    void uploadAudio() {
+        progressDialogue.setMessage("Uploading...");
+        progressDialogue.show();
+
+        StorageReference storage = audioStoragereference.child("new_audio" + System.currentTimeMillis()+".3gp");
+        Uri uri = Uri.fromFile(new File(mFileName));
+        storage.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                progressDialogue.dismiss();
+                // databaseReference.push().setValue(new ChatMessage(null, myMessage, downloadedUri.toString()));
+
+            }
+        });
+    }
 }
+
